@@ -17,6 +17,14 @@ df = pd.read_csv('After_ECI.csv')
 df['date_of_purchase'] = pd.to_datetime(df['date_of_purchase'], format = 'mixed')
 df['date_of_encashment'] = pd.to_datetime(df['date_of_encashment'], format = 'mixed')
 
+def load_home():
+    st.title('Hi There, My name is Ark ✨ Welcome you to my website')
+    st.subheader("""This Website shows you a Quick Analysis of Electoral Bond Data
+released by SBI on the order of Hon'ble Supreme Court""")
+    st.image(r'https://images.thequint.com/thequint%2F2019-03%2F53a894ad-faf7-4548-9120-552ec5691831%2Fhero.jpg?rect=0%2C0%2C2000%2C1125&auto=format%2Ccompress&fmt=webp&width=720')
+    st.text('If you was living under the rock here is a quick explainer for you')
+    st.page_link('https://youtu.be/RJfqzUWZ0Bw?feature=shared',label='YT Video - Click Me !')
+
 def load_pp():
     spc_part_Tfund = df[df['standardised_political_party_name'] == selected_pp]['amount'].sum()
     st.header(f'''A Quick Analysis of {selected_pp}''')
@@ -128,6 +136,57 @@ def load_pp():
         st.subheader(f'Total number of bonds {jj}')
 
     st.divider()
+def load_donar():
+    st.header(f'A Quick Analysis of {selected_donar}')
+    d_amount = df.groupby('standardised_purchaser_name')['amount'].sum().loc[selected_donar]
+    colb1, colb2 = st.columns(2)
+
+    with colb1:
+        labels2 = selected_donar, 'Others'
+        sizes = [d_amount, total_funds-d_amount]
+        explode = (0.1, 0)
+
+        figb1, axb1 = plt.subplots()
+        axb1.pie(sizes, explode=explode, labels=labels2, autopct='%1.1f%%', startangle=90)
+        axb1.axis('equal')  # Equal aspect ratio ensures that pie is drawn as a circle.
+
+        st.pyplot(figb1)
+    with colb2:
+        st.subheader('Total amount of bond bought')
+        st.text(f'{total_funds//10000000} Cr.')
+
+        st.subheader('Total worth of bond bought')
+        st.text(f'by {selected_donar}')
+        st.text(f'{d_amount//10000000} Cr.')
+    st.divider()
+    colb3, colb4 = st.columns(2)
+    kkdf = df[df['standardised_purchaser_name'] == selected_donar][['standardised_political_party_name','amount']].groupby('standardised_political_party_name').sum().sort_values(by='amount',ascending=False)
+    with colb3:
+        st.dataframe(kkdf)
+    with colb4:
+        fige, axe = plt.subplots()
+        axe.barh(kkdf.index,kkdf['amount'])
+
+        st.pyplot(fige)
+        
+    pass
+def load_Overall():
+    colc3, colc4 = st.columns(2)
+    with colc3:
+        doi =df[df['organisation_or_individual']=='Individual'].groupby('standardised_purchaser_name')['amount'].sum().sort_values(ascending=False)
+        doo = df[df['organisation_or_individual']=='Organisation'].groupby('standardised_purchaser_name')['amount'].sum().sort_values(ascending=False)
+        st.dataframe(doi)
+        figc3, axc3 = plt.subplots()
+        axc3.barh(doi.head(10).index,doi.head(10).values)
+
+        st.pyplot(figc3)
+    with colc4:
+        figc2, axc2 = plt.subplots()
+        axc2.barh(doo.head(10).index,doo.head(10).values)
+
+        st.pyplot(figc2)
+        st.dataframe(doo)
+    pass
 
 #####
 
@@ -135,15 +194,20 @@ with st.sidebar:
     st.title('Electoral Bond Data Analysis')
     
     total_funds = df['amount'].sum()
-    option = st.selectbox('Choose one of them', ['Political Parties','Bond Purchaser'])
-if option == 'Political Parties':
+    option = st.selectbox('Choose one of them', ['Select','Overall Analysis','Political Parties','Bond Purchaser'])
+if option == 'Select':
+    load_home()
+elif option == 'Political Parties':
     pp = list(df['standardised_political_party_name'].unique())
     selected_pp = st.sidebar.selectbox('Political Parties', pp)
     load_pp()
     
-if option == 'Bond Purchaser':
-    Donar = sorted(list(df['standardised_purchaser_name'].unique()))
+elif option == 'Bond Purchaser':
+    Donar = list(df.groupby('standardised_purchaser_name')['amount'].sum().sort_values(ascending=False).index)
     selected_donar = st.sidebar.selectbox('Bond Purchaser', Donar)
+    load_donar()
 
+elif option == 'Overall Analysis':
+    load_Overall()
 
 
